@@ -9,10 +9,7 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -22,12 +19,11 @@ import static com.company.control.Controlador.Origen.MODIFICAR;
 import static com.company.control.Controlador.Origen.NUEVO;
 import static javax.swing.JOptionPane.OK_OPTION;
 
-public class Controlador implements ActionListener, MouseListener, DocumentListener {
+public class Controlador implements ActionListener, MouseListener, DocumentListener, WindowListener {
     private Modelo modelo;
     private Vista vista;
     private int idPeliculaSeleccionada;
-    private File imagenSeleccionada;
-
+    private String imagenSeleccionada;
     public enum Origen {
         NUEVO, MODIFICAR
     }
@@ -39,7 +35,7 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
 
         try {
             modelo.conectar();
-            iniciarSesion();
+//            iniciarSesion();
 
             // Establecer el estado por defecto de la aplicacion
             modoEdicion(false);
@@ -52,7 +48,32 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
         }
     }
 
+    /****************************
+     *                           *
+     *      LISTENERS            *
+     *                           *
+     ****************************/
 
+    private void addListeners() {
+        // BOTONES: ActionListener
+        JButton[] botones = {vista.btNuevo, vista.btModificar, vista.btGuardar,
+                vista.btCancelar, vista.btEliminar, vista.btDeshacer, vista.btEliminarTodo};
+        for (JButton boton: botones) {
+            boton.addActionListener(this);
+        }
+
+        // TEXTO EN BUSQUEDA: DocumentListener
+        vista.tfBusqueda.getDocument().addDocumentListener(this);
+
+        // IMAGEN: MouseListener
+        vista.lImagen.addMouseListener(this);
+
+        // CLICK EN LISTA: MouseListener
+        vista.listaPeliculas.addMouseListener(this);
+
+        // CIERRE DE LA VENTANA: WindowListener
+        vista.addWindowListener(this);
+    }
 
     private void configurarModo(String actionCommand) {
         switch (actionCommand) {
@@ -61,7 +82,6 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
                 modoEdicion(true);
                 break;
             case "Guardar":
-            case "Guardar Como":
             case "Cancelar":
             case "Eliminar":
             case "Eliminar Todo":
@@ -80,47 +100,23 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
         // Realiza la accion correspondiente a cada boton
         switch (e.getActionCommand()) {
             case "Nuevo":
-
                 origen = NUEVO;
                 vaciarCajas();
                 break;
-
             case "Modificar":
-
                 origen = MODIFICAR;
                 cargarPelicula(vista.listaPeliculas.getSelectedValue());
                 break;
-
             case "Guardar":
-
                 // Recoger la pelicula y si no hay errores, guardarla
                 Pelicula pelicula;
                 if (null != (pelicula = cogerDatosPelicula())) {
                     guardarPelicula(pelicula);
                 }
                 break;
-
-            case "Guardar Como":
-                // todo adaptar a base de datos
-//                // Coger el directorio de salida
-//                JFileChooser jfc = new JFileChooser();
-//                jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-//                if (jfc.showOpenDialog(null) == JFileChooser.CANCEL_OPTION) {
-//                    return;
-//                }
-//
-//                // Construir la ruta de destino con el directorio seleccionado
-//                String rutaSeleccionada = jfc.getSelectedFile().getPath()
-//                        + File.separator + "peliculas.dat";
-//                if (null != (pelicula = cogerDatosPelicula())) {
-//                    guardarPelicula(pelicula, rutaSeleccionada);
-//                }
-
             case "Cancelar":
-
                 vaciarCajas();
                 break;
-
             case "Eliminar":
                 eliminarPelicula();
                 vista.btDeshacer.setEnabled(true);
@@ -130,22 +126,66 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
                 vista.btDeshacer.setEnabled(false);
                 break;
             case "Eliminar Todo":
-                String warning = "¿Está seguro de que desea borrarlo todo?";
-                if(JOptionPane.showConfirmDialog(null, warning) == OK_OPTION){
-                    modelo.borrarTodo();
-                    if (origen != NUEVO) {
-                        vaciarCajas();
-                    }
-                }
+                eliminarTodo();
                 break;
             default:
                 break;
         }
 
         // Haga lo que haga, refresca la lista
-        refrescarLista(modelo.getPeliculas());
+        try {
+            refrescarLista(modelo.getPeliculas());
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        }
     }
 
+    @Override
+    public void insertUpdate(DocumentEvent e) {
+        // Cargar la lista que devuelve lo que haya en la caja de busqueda
+        try {
+            refrescarLista(modelo.getPeliculas(vista.tfBusqueda.getText()));
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        }
+    }
+
+    @Override
+    public void removeUpdate(DocumentEvent e) {
+        // Cargar la lista que devuelve lo que haya en la caja de busqueda
+        try {
+            refrescarLista(modelo.getPeliculas(vista.tfBusqueda.getText()));
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        }
+    }
+
+    @Override
+    public void windowClosing(WindowEvent e) {
+        try {
+            modelo.desconectar();
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        }
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if (e.getComponent().equals(vista.listaPeliculas)) {
+            // Click en la lista
+            cargarPelicula(vista.listaPeliculas.getSelectedValue());
+            idPeliculaSeleccionada = vista.listaPeliculas.getSelectedValue().getId();
+
+        } else if (e.getComponent().equals(vista.lImagen)) {
+            // Click en la imagen
+            JFileChooser jfc = new JFileChooser();
+            if (jfc.showOpenDialog(null) == JFileChooser.CANCEL_OPTION)
+                return;
+
+            imagenSeleccionada = jfc.getSelectedFile().getAbsolutePath();
+            colocarImagen(imagenSeleccionada);
+        }
+    }
 
     /*
     Metodo para recoger los datos de las cajas de texto e imagen
@@ -156,7 +196,7 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
         String titulo, sinopsis;
         int valoracion;
         float recaudacion;
-        File imagen;
+        String imagen;
 
         if (vista.tfTitulo.getText().isEmpty()) {
             JOptionPane.showMessageDialog(vista, "El título es necesario", "Error", JOptionPane.ERROR_MESSAGE);
@@ -177,7 +217,7 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
         pelicula.setSinopsis(sinopsis);
         pelicula.setValoracion(valoracion);
         pelicula.setRecaudacion(recaudacion);
-        pelicula.setImagen(imagen);
+        pelicula.setRutaImagen(imagen);
 
         // Si se trata de una modificacion, conserva el ID
         if (origen.equals(MODIFICAR)) {
@@ -225,59 +265,45 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
     }
 
     private void guardarPelicula(Pelicula pelicula) {
-        modelo.guardarPelicula(pelicula);
-        origen = null;
-    }
-
-    private void guardarPelicula(Pelicula pelicula, String destino) {
-        modelo.guardarPelicula(pelicula, destino);
-        origen = null;
+        try {
+            modelo.guardarPelicula(pelicula);
+            origen = null;
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void eliminarPelicula() {
         Pelicula peliculaSeleccionada = vista.listaPeliculas.getSelectedValue();
-        modelo.eliminarPelicula(peliculaSeleccionada);
+        try {
+            modelo.eliminarPelicula(peliculaSeleccionada);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void eliminarTodo() {
+        String warning = "¿Está seguro de que desea borrarlo todo?";
+        if(JOptionPane.showConfirmDialog(null, warning) == OK_OPTION){
+            try {
+                modelo.borrarTodo();
+                if (origen != NUEVO) {
+                    vaciarCajas();
+                }
+            } catch (SQLException sqle) {
+                sqle.printStackTrace();
+            }
+        }
     }
 
     private void deshacerUltimoBorrado() {
         Pelicula borrada = modelo.getUltimaBorrada();
-        modelo.guardarPelicula(borrada);
-        cargarPelicula(borrada);
-    }
-
-    private void addListeners() {
-        // BOTONES: ActionListener
-        JButton[] botones = {vista.btNuevo, vista.btModificar, vista.btGuardar, vista.btGuardarComo,
-                vista.btCancelar, vista.btEliminar, vista.btDeshacer, vista.btEliminarTodo};
-        for (JButton boton: botones) {
-            boton.addActionListener(this);
-        }
-
-        // TEXTO EN BUSQUEDA: DocumentListener
-        vista.tfBusqueda.getDocument().addDocumentListener(this);
-
-        // IMAGEN: MouseListener
-        vista.lImagen.addMouseListener(this);
-
-        // CLICK EN LISTA: MouseListener
-        vista.listaPeliculas.addMouseListener(this);
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-        if (e.getComponent().equals(vista.listaPeliculas)) {
-            // Click en la lista
-            cargarPelicula(vista.listaPeliculas.getSelectedValue());
-            idPeliculaSeleccionada = vista.listaPeliculas.getSelectedValue().getId();
-
-        } else if (e.getComponent().equals(vista.lImagen)) {
-            // Click en la imagen
-            JFileChooser jfc = new JFileChooser();
-            if (jfc.showOpenDialog(null) == JFileChooser.CANCEL_OPTION)
-                return;
-
-            imagenSeleccionada = jfc.getSelectedFile();
-            colocarImagen(imagenSeleccionada);
+        try {
+            borrada.setId(0);
+            modelo.guardarPelicula(borrada);
+            cargarPelicula(borrada);
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -325,29 +351,16 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
         vista.taSinopsis.setText(pelicula.getSinopsis());
 
         // Colocar la imagen de la pelicula si tiene y si no, la imagen por defecto
-        colocarImagen(pelicula.getImagen().exists() ?
-                pelicula.getImagen() : modelo.getDefaultImage());
+        colocarImagen(new File(pelicula.getRutaImagen()).exists() ?
+                pelicula.getRutaImagen() : modelo.getDefaultImage());
     }
 
-    private void colocarImagen(File imagen) {
-        ImageIcon imageIcon = new ImageIcon(imagen.getPath());
+    private void colocarImagen(String imagen) {
+        ImageIcon imageIcon = new ImageIcon(imagen);
         Image image = imageIcon.getImage().getScaledInstance(240, -1, Image.SCALE_DEFAULT);
         vista.lImagen.setIcon(new ImageIcon(image));
         vista.pack();
     }
-
-    @Override
-    public void insertUpdate(DocumentEvent e) {
-        // Cargar la lista que devuelve lo que haya en la caja de busqueda
-        refrescarLista(modelo.getPeliculas(vista.tfBusqueda.getText()));
-    }
-
-    @Override
-    public void removeUpdate(DocumentEvent e) {
-        // Cargar la lista que devuelve lo que haya en la caja de busqueda
-        refrescarLista(modelo.getPeliculas(vista.tfBusqueda.getText()));
-    }
-
 
 
     /****************************
@@ -377,6 +390,36 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
 
     @Override
     public void mouseExited(MouseEvent e) {
+
+    }
+
+    @Override
+    public void windowOpened(WindowEvent e) {
+
+    }
+
+    @Override
+    public void windowClosed(WindowEvent e) {
+
+    }
+
+    @Override
+    public void windowIconified(WindowEvent e) {
+
+    }
+
+    @Override
+    public void windowDeiconified(WindowEvent e) {
+
+    }
+
+    @Override
+    public void windowActivated(WindowEvent e) {
+
+    }
+
+    @Override
+    public void windowDeactivated(WindowEvent e) {
 
     }
 

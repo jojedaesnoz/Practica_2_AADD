@@ -13,7 +13,6 @@ public class Login extends JDialog implements ActionListener, KeyListener, Focus
     public JComponent[] componentes;
     private String usuario, contrasena;
 
-
     public Login() {
         prepararComponentes();
         prepararVentana();

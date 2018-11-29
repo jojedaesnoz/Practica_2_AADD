@@ -12,7 +12,7 @@ public class Vista extends JFrame {
     public JList<Pelicula> listaPeliculas;
 
     // BOTONES
-    public JButton btNuevo, btGuardar, btGuardarComo, btModificar, btCancelar, btEliminar, btDeshacer, btEliminarTodo;
+    public JButton btNuevo, btGuardar, btModificar, btCancelar, btEliminar, btDeshacer, btEliminarTodo;
 
     // LABELS CAJAS E IMAGEN
     private JLabel lTitulo, lSinopsis, lValoracion, lRecaudacion;
@@ -48,7 +48,6 @@ public class Vista extends JFrame {
         // BOTONES
         btNuevo = new JButton("Nuevo");
         btGuardar = new JButton("Guardar");
-        btGuardarComo = new JButton("Guardar Como");
         btModificar = new JButton("Modificar");
         btCancelar = new JButton("Cancelar");
         btEliminar = new JButton("Eliminar");
@@ -161,7 +160,7 @@ public class Vista extends JFrame {
     private void crearPanelBotones() {
 
         JPanel botonera = new JPanel();
-        JButton[] botones = {btNuevo, btGuardar, btGuardarComo, btModificar, btCancelar,
+        JButton[] botones = {btNuevo, btGuardar, btModificar, btCancelar,
                 btEliminar, btDeshacer, btEliminarTodo};
 
         botonera.setLayout(new GridLayout(1, botones.length));

@@ -10,7 +10,7 @@ public class Pelicula implements Serializable {
     private String sinopsis;
     private int valoracion;
     private float recaudacion;
-    private File imagen;
+    private String rutaImagen;
 
     public String getTitulo() {
         return titulo;
@@ -44,12 +44,12 @@ public class Pelicula implements Serializable {
         this.recaudacion = recaudacion;
     }
 
-    public File getImagen() {
-        return imagen;
+    public String getRutaImagen() {
+        return rutaImagen;
     }
 
-    public void setImagen(File imagen) {
-        this.imagen = new File(imagen.getPath());
+    public void setRutaImagen(String rutaImagen) {
+        this.rutaImagen = rutaImagen;
     }
 
     public int getId() {

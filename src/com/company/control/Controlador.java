@@ -29,13 +29,19 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
     }
     private Origen origen;
 
+    /*
+    Puntos opcionales:
+        Añadir una opción al usuario que permita recuperar el último elemento borrado
+        Añadir una opción a la aplicación que permita eliminar todos los datos del programa
+     */
+
     public Controlador(Modelo modelo, Vista vista) {
         this.modelo = modelo;
         this.vista = vista;
 
         try {
             modelo.conectar();
-//            iniciarSesion();
+            iniciarSesion();
 
             // Establecer el estado por defecto de la aplicacion
             modoEdicion(false);
@@ -171,7 +177,7 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        if (e.getComponent().equals(vista.listaPeliculas)) {
+        if (e.getComponent().equals(vista.listaPeliculas) && !vista.modeloPeliculas.isEmpty()) {
             // Click en la lista
             cargarPelicula(vista.listaPeliculas.getSelectedValue());
             idPeliculaSeleccionada = vista.listaPeliculas.getSelectedValue().getId();
@@ -255,7 +261,6 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
 
                     login.mostrarMensaje("Error en el usuario y/o contraseña.");
                     intentos++;
-//                    continue;
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -275,10 +280,12 @@ public class Controlador implements ActionListener, MouseListener, DocumentListe
 
     private void eliminarPelicula() {
         Pelicula peliculaSeleccionada = vista.listaPeliculas.getSelectedValue();
-        try {
-            modelo.eliminarPelicula(peliculaSeleccionada);
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if (peliculaSeleccionada != null) {
+            try {
+                modelo.eliminarPelicula(peliculaSeleccionada);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 

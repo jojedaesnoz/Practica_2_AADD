@@ -40,9 +40,6 @@ public class Modelo {
         conexion = null;
     }
 
-    // Borra las imagenes que no esten siendo usadas por ninguna pelicula
-
-
     public boolean iniciarSesion(String usuario, String contrasena) throws SQLException {
         String sql = "select id from usuarios where usuario = ? and contrasena = SHA1(?);" ;
         PreparedStatement sentencia = conexion.prepareStatement(sql);
@@ -59,8 +56,6 @@ public class Modelo {
     public String getDefaultImage() {
         return DEFAULT_IMAGE;
     }
-
-
 
     public void guardarPelicula(Pelicula nueva) throws SQLException, IOException {
         nueva.setRutaImagen(copiarImagen(nueva.getRutaImagen()));
@@ -104,10 +99,6 @@ public class Modelo {
 
         sentencia.executeUpdate();
         sentencia.close();
-    }
-
-    private Pelicula buscarPeliculaPorID(int id) {
-        return null;
     }
 
     public List<Pelicula> getPeliculas() throws SQLException {
@@ -156,10 +147,10 @@ public class Modelo {
         return ultimaBorrada;
     }
 
-    public boolean borrarTodo() throws SQLException {
+    public void borrarTodo() throws SQLException {
         String sql = "delete from " + TABLA_PELICULAS;
         PreparedStatement sentencia = conexion.prepareStatement(sql);
-        return sentencia.executeUpdate() != 0;
+        sentencia.executeUpdate();
     }
 
     private void limpiarImagenesSobrantes() throws SQLException {
@@ -168,10 +159,13 @@ public class Modelo {
             imagenesUsadas.add(new File(pelicula.getRutaImagen()));
         }
 
-        File carpetaImagenes = new File(RUTA_IMAGENES);
-        for (File imagen:  carpetaImagenes.listFiles()) {
-            if (!imagenesUsadas.contains(imagen))
-                imagen.delete();
+        File[] imagenesLocales = new File(RUTA_IMAGENES).listFiles();
+        if (imagenesLocales != null) {
+            for (File imagen: imagenesLocales) {
+                if (!imagenesUsadas.contains(imagen)) {
+                    imagen.delete();
+                }
+            }
         }
     }
 

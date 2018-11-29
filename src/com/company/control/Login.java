@@ -58,15 +58,6 @@ public class Login extends JDialog implements ActionListener, KeyListener, Focus
     }
 
     @Override
-    public void keyTyped(KeyEvent e) {
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-
-    }
-
-    @Override
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_ENTER) {
             btEntrar.doClick();
@@ -103,20 +94,8 @@ public class Login extends JDialog implements ActionListener, KeyListener, Focus
         return usuario;
     }
 
-    public void setUsuario(String usuario) {
-        this.usuario = usuario;
-    }
-
     public String getContrasena() {
         return contrasena;
-    }
-
-    public void setContrasena(String contrasena) {
-        this.contrasena = contrasena;
-    }
-
-    public JLabel getMensaje() {
-        return mensaje;
     }
 
     public void mostrarMensaje(String mensaje){
@@ -133,8 +112,21 @@ public class Login extends JDialog implements ActionListener, KeyListener, Focus
         }
     }
 
+
+    // LISTENERS VACIOS
+
     @Override
     public void focusLost(FocusEvent e) {
 
     }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+
+    }
+
 }
